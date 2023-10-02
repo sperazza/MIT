@@ -39,7 +39,8 @@ def hinge_loss_single(feature_vector, label, theta, theta_0):
         parameters.
     """
     # Your code here
-    raise NotImplementedError
+    loss = max(0, 1 - label * (np.dot(theta, feature_vector) + theta_0))
+    return loss
 
 
 
@@ -61,7 +62,12 @@ def hinge_loss_full(feature_matrix, labels, theta, theta_0):
     """
 
     # Your code here
-    raise NotImplementedError
+    losses = [max(0, 1 - labels[i] * (np.dot(theta, feature_matrix[i]) + theta_0)) for i in range(len(labels))]
+
+    # Calculate the average hinge loss
+    average_loss = np.mean(losses)
+
+    return average_loss
 
 
 
@@ -88,7 +94,17 @@ def perceptron_single_step_update(
         the updated offset parameter `theta_0` as a floating point number
     """
     # Your code here
-    raise NotImplementedError
+    epsilon = 1e-8  # Define a small threshold for comparison with zero
+
+    # Compute the decision value (score) for this data point
+    score = label * (np.dot(current_theta, feature_vector) + current_theta_0)
+
+    # If the data point is misclassified, update theta and theta_0
+    if score <= epsilon:
+        current_theta = current_theta + label * feature_vector
+        current_theta_0 = current_theta_0 + label
+
+    return (current_theta, current_theta_0)
 
 
 
@@ -115,13 +131,18 @@ def perceptron(feature_matrix, labels, T):
             (found also after T iterations through the feature matrix).
     """
     # Your code here
-    raise NotImplementedError
+    n = feature_matrix.shape[1]
+    theta = np.zeros(n)
+    theta_0 = 0.0
+
+    # Iterate T times over the dataset
     for t in range(T):
-        for i in get_order(nsamples):
-            # Your code here
-            raise NotImplementedError
-    # Your code here
-    raise NotImplementedError
+        # Get the ordering for this iteration
+        for i in get_order(feature_matrix.shape[0]):
+            # Update theta and theta_0 using perceptron_single_step_update
+            theta, theta_0 = perceptron_single_step_update(feature_matrix[i], labels[i], theta, theta_0)
+
+    return theta, theta_0
 
 
 
@@ -152,7 +173,32 @@ def average_perceptron(feature_matrix, labels, T):
             (averaged also over T iterations through the feature matrix).
     """
     # Your code here
-    raise NotImplementedError
+    # Initialize theta, theta_0, and their sums
+    n = feature_matrix.shape[1]
+    theta = np.zeros(n)
+    theta_0 = 0.0
+    theta_sum = np.zeros(n)
+    theta_0_sum = 0.0
+
+    # Total number of data points
+    n_samples = feature_matrix.shape[0]
+
+    # Iterate T times over the dataset
+    for t in range(T):
+        # Get the ordering for this iteration
+        for i in get_order(n_samples):
+            # Update theta and theta_0 using perceptron_single_step_update
+            theta, theta_0 = perceptron_single_step_update(feature_matrix[i], labels[i], theta, theta_0)
+
+            # Accumulate the sums
+            theta_sum += theta
+            theta_0_sum += theta_0
+
+    # Compute the average values of theta and theta_0
+    average_theta = theta_sum / (T * n_samples)
+    average_theta_0 = theta_0_sum / (T * n_samples)
+
+    return average_theta, average_theta_0
 
 
 def pegasos_single_step_update(
@@ -183,7 +229,17 @@ def pegasos_single_step_update(
         completed.
     """
     # Your code here
-    raise NotImplementedError
+    # Compute the decision value (score) for this data point
+    score = label * (np.dot(theta, feature_vector) + theta_0)
+
+    # Update rule based on the condition
+    if score <= 1:
+        theta = (1 - eta * L) * theta + eta * label * feature_vector
+        theta_0 += eta * label
+    else:
+        theta = (1 - eta * L) * theta
+
+    return theta, theta_0
 
 
 
@@ -215,7 +271,25 @@ def pegasos(feature_matrix, labels, T, L):
         after T iterations through the feature matrix.
     """
     # Your code here
-    raise NotImplementedError
+    # Initialize theta and theta_0
+    n = feature_matrix.shape[1]
+    theta = np.zeros(n)
+    theta_0 = 0.0
+
+    # Counter for the number of updates performed
+    t = 0
+
+    # Iterate T times over the dataset
+    for _ in range(T):
+        # Get the ordering for this iteration
+        for i in get_order(feature_matrix.shape[0]):
+            t += 1  # Update the counter
+            eta = 1 / np.sqrt(t)  # Set the learning rate
+
+            # Update theta and theta_0 using pegasos_single_step_update
+            theta, theta_0 = pegasos_single_step_update(feature_matrix[i], labels[i], L, eta, theta, theta_0)
+
+    return theta, theta_0
 
 
 
