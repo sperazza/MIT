@@ -326,7 +326,13 @@ def classify(feature_matrix, theta, theta_0):
         should be considered a positive classification.
     """
     # Your code here
-    raise NotImplementedError
+    # Compute the scores for each data point
+    scores = np.dot(feature_matrix, theta) + theta_0
+
+    # Convert scores to 1s and -1s based on the sign
+    classifications = np.where(scores > 0, 1, -1)
+
+    return classifications
 
 
 def classifier_accuracy(
@@ -363,7 +369,22 @@ def classifier_accuracy(
         accuracy of the trained classifier on the validation data.
     """
     # Your code here
-    raise NotImplementedError
+    # Train the classifier on the training data
+    theta, theta_0 = classifier(train_feature_matrix, train_labels, **kwargs)
+
+    # Predict on the training data
+    train_predictions = classify(train_feature_matrix, theta, theta_0)
+
+    # Compute accuracy on the training data
+    train_accuracy = np.mean(train_predictions == train_labels)
+
+    # Predict on the validation data
+    val_predictions = classify(val_feature_matrix, theta, theta_0)
+
+    # Compute accuracy on the validation data
+    val_accuracy = np.mean(val_predictions == val_labels)
+
+    return (train_accuracy, val_accuracy)
 
 
 
@@ -377,12 +398,22 @@ def extract_words(text):
         count as their own words.
     """
     # Your code here
-    raise NotImplementedError
+    #raise NotImplementedError
 
     for c in punctuation + digits:
         text = text.replace(c, ' ' + c + ' ')
     return text.lower().split()
 
+
+def load_stopwords(file_path):
+    """Load stopwords from a given file and return as a set."""
+    with open(file_path, 'r') as file:
+        stopwords = set(file.read().splitlines())
+    return stopwords
+
+# Load stopwords from the provided file
+stopwords_path = "stopwords.txt"
+stopword = load_stopwords(stopwords_path)
 
 
 def bag_of_words(texts, remove_stopword=False):
@@ -397,21 +428,21 @@ def bag_of_words(texts, remove_stopword=False):
         integer `index`.
     """
     # Your code here
-    raise NotImplementedError
+    #raise NotImplementedError
     
     indices_by_word = {}  # maps word to unique index
     for text in texts:
         word_list = extract_words(text)
         for word in word_list:
             if word in indices_by_word: continue
-            if word in stopword: continue
+#            if word in stopword: continue
             indices_by_word[word] = len(indices_by_word)
 
     return indices_by_word
 
 
 
-def extract_bow_feature_vectors(reviews, indices_by_word, binarize=True):
+def extract_bow_feature_vectors(reviews, indices_by_word, binarize=False):
     """
     Args:
         `reviews` - a list of natural language strings
@@ -427,10 +458,11 @@ def extract_bow_feature_vectors(reviews, indices_by_word, binarize=True):
         word_list = extract_words(text)
         for word in word_list:
             if word not in indices_by_word: continue
-            feature_matrix[i, indices_by_word[word]] += 1
-    if binarize:
+            feature_matrix[i, indices_by_word[word]] = 1
+            #feature_matrix[i, indices_by_word[word]] += 1
+#    if binarize:
         # Your code here
-        raise NotImplementedError
+#        feature_matrix = (feature_matrix > 0).astype(np.float64)
     return feature_matrix
 
 
