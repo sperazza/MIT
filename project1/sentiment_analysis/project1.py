@@ -435,7 +435,7 @@ def bag_of_words(texts, remove_stopword=False):
         word_list = extract_words(text)
         for word in word_list:
             if word in indices_by_word: continue
-#            if word in stopword: continue
+            if word in stopword: continue
             indices_by_word[word] = len(indices_by_word)
 
     return indices_by_word
@@ -458,11 +458,11 @@ def extract_bow_feature_vectors(reviews, indices_by_word, binarize=False):
         word_list = extract_words(text)
         for word in word_list:
             if word not in indices_by_word: continue
-            feature_matrix[i, indices_by_word[word]] = 1
-            #feature_matrix[i, indices_by_word[word]] += 1
-#    if binarize:
+            #feature_matrix[i, indices_by_word[word]] = 1
+            feature_matrix[i, indices_by_word[word]] += 1
+    if binarize:
         # Your code here
-#        feature_matrix = (feature_matrix > 0).astype(np.float64)
+        feature_matrix = (feature_matrix > 0).astype(np.float64)
     return feature_matrix
 
 
