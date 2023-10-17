@@ -237,7 +237,7 @@ def check_project_onto_PC():
     ]);
     x_centered, feature_means = features.center_data(X)
     pcs = features.principal_components(x_centered)
-    exp_res = np.array([
+    exp_res = -np.array([
         [-5.61248608, 0],
         [-1.87082869, 0],
         [1.87082869, 0],

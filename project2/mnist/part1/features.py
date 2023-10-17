@@ -16,9 +16,14 @@ def project_onto_PC(X, pcs, n_components, feature_means):
     #       of the eigenvectors returned by principal_components().
     #       Note that each eigenvector is already be a unit-vector,
     #       so the projection may be done using matrix multiplication.
-    raise NotImplementedError
-
-
+    # Center the data using the feature_means
+    X_centered = X - feature_means
+    
+    # Project the centered data onto the first n_components principal components
+    # using matrix multiplication
+    X_projected = X_centered.dot(pcs[:, :n_components])
+    
+    return X_projected
 ### Functions which are already complete, for you to use ###
 
 def cubic_features(X):
