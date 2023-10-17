@@ -12,6 +12,7 @@ import kernel
 sys.path.append("..")
 import utils
 
+
 verbose = False
 
 epsilon = 1e-6

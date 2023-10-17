@@ -1,5 +1,6 @@
 import sys
 sys.path.append("..")
+print(sys.path)
 import utils
 from utils import *
 import numpy as np
@@ -32,7 +33,17 @@ def compute_probabilities(X, theta, temp_parameter):
         H - (k, n) NumPy array, where each entry H[j][i] is the probability that X[i] is labeled as j
     """
     #YOUR CODE HERE
-    raise NotImplementedError
+    logits = np.dot(X, theta.T) / temp_parameter
+    
+    # To make the softmax computation numerically stable, subtract the maximum logit value from all logits
+    logits -= np.max(logits, axis=1, keepdims=True)
+    
+    # Compute the softmax probabilities
+    logits_exp = np.exp(logits)
+    H = logits_exp / np.sum(logits_exp, axis=1, keepdims=True)
+    
+    return H.T
+
 
 def compute_cost_function(X, Y, theta, lambda_factor, temp_parameter):
     """
@@ -51,7 +62,19 @@ def compute_cost_function(X, Y, theta, lambda_factor, temp_parameter):
         c - the cost value (scalar)
     """
     #YOUR CODE HERE
-    raise NotImplementedError
+    # Get the probabilities using the compute_probabilities function
+    probabilities = compute_probabilities(X, theta, temp_parameter)
+    
+    # Compute the negative log likelihood
+    nll = -np.mean(np.log(probabilities[Y, np.arange(Y.size)]))
+    
+    # Compute the regularization term
+    regularization_term = (lambda_factor / 2) * np.sum(theta**2)
+    
+    # Combine to get the final cost
+    c = nll + regularization_term
+    
+    return c
 
 def run_gradient_descent_iteration(X, Y, theta, alpha, lambda_factor, temp_parameter):
     """
@@ -71,7 +94,22 @@ def run_gradient_descent_iteration(X, Y, theta, alpha, lambda_factor, temp_param
         theta - (k, d) NumPy array that is the final value of parameters theta
     """
     #YOUR CODE HERE
-    raise NotImplementedError
+    # Get the probabilities using the compute_probabilities function
+    probabilities = compute_probabilities(X, theta, temp_parameter)
+    
+    # Create a sparse matrix where each row i has a 1 at the column corresponding to Y[i]
+    M = sparse.coo_matrix(([1]*X.shape[0], (Y, range(X.shape[0]))), shape=(theta.shape[0], X.shape[0])).toarray()
+    
+    # Compute the gradient for the negative log likelihood
+    grad_NLL = -1 / (X.shape[0] * temp_parameter) * np.dot(M - probabilities, X)
+    
+    # Compute the gradient for the regularization term
+    grad_regularization = lambda_factor * theta
+    
+    # Combine the gradients and update theta
+    theta -= alpha * (grad_NLL + grad_regularization)
+    
+    return theta
 
 def update_y(train_y, test_y):
     """
@@ -91,7 +129,10 @@ def update_y(train_y, test_y):
                     for each datapoint in the test set
     """
     #YOUR CODE HERE
-    raise NotImplementedError
+    train_y_mod3 = train_y % 3
+    test_y_mod3 = test_y % 3
+    
+    return train_y_mod3, test_y_mod3
 
 def compute_test_error_mod3(X, Y, theta, temp_parameter):
     """
@@ -109,7 +150,16 @@ def compute_test_error_mod3(X, Y, theta, temp_parameter):
         test_error - the error rate of the classifier (scalar)
     """
     #YOUR CODE HERE
-    raise NotImplementedError
+    # Predict the classes using the get_classification function
+    predicted_classes = get_classification(X, theta, temp_parameter)
+    
+    # Compute the predicted class modulo 3
+    predicted_mod3 = predicted_classes % 3
+    
+    # Compare these predictions to the true labels Y to compute the error rate
+    test_error = np.mean(predicted_mod3 != Y)
+    
+    return test_error
 
 def softmax_regression(X, Y, temp_parameter, alpha, lambda_factor, k, num_iterations):
     """
