@@ -12,8 +12,7 @@ class GaussianMixture(NamedTuple):
     p: np.ndarray  # (K, ) array = each row corresponds to the weight of a component
 
 
-def init(X: np.ndarray, K: int,
-         seed: int = 0) -> Tuple[GaussianMixture, np.ndarray]:
+def init(X: np.ndarray, K: int, seed: int = 0) -> Tuple[GaussianMixture, np.ndarray]:
     """Initializes the mixture model with random points as initial
     means and uniform assingments
 
