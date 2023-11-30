@@ -2,14 +2,7 @@ import numpy as np
 import kmeans
 import common
 import naive_em
-
-import em
 import em_matrix
-
-from sklearn.mixture import GaussianMixture
-
-from copy import deepcopy
-from typing import Tuple
 
 X = np.loadtxt("toy_data.txt")
 
@@ -24,8 +17,13 @@ def run_naive_em(X, K, seed):
 
 def run_em(X, K, seed):
     mixture, post = common.init(X, K, seed)
-    mixture, post, log_likelihood = em.run(X, mixture, post)
+    mixture, post, log_likelihood = kmeans.run(X, mixture, post)
     return mixture, post, log_likelihood
+
+from sklearn.mixture import GaussianMixture
+
+from copy import deepcopy
+from typing import Tuple
 
 if __name__ == "__main__":
 
@@ -90,7 +88,7 @@ if __name__ == "__main__":
                 verbose=False
                 if k==4:
                     verbose=True
-                mixture, post, log_likelihood = em.run(X, mixture, post)
+                mixture, post, log_likelihood = em_matrix.run(X, mixture, None,verbose=False)
                 if verbose:
                     print(f"seed={seed}, log_likelihood={log_likelihood}")
                 # Compare log likelihood and store the best
@@ -117,7 +115,7 @@ if __name__ == "__main__":
                 verbose=False
                 if k==4:
                     verbose=True
-                mixture, post, log_likelihood = em.run(X, mixture, None,verbose=False)
+                mixture, post, log_likelihood = em_matrix.run(X, mixture, None,verbose=False)
                 if verbose:
                     print(f"seed={seed}, log_likelihood={log_likelihood}")
 

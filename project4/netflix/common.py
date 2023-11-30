@@ -97,4 +97,43 @@ def bic(X: np.ndarray, mixture: GaussianMixture,
     Returns:
         float: the BIC for this mixture
     """
-    raise NotImplementedError
+    n, D = X.shape  # n is the number of data points, D is the dimensionality
+    K = mixture.mu.shape[0]  # K is the number of components in the mixture model
+    p = K * D + K + (K - 1)  # Number of free parameters for spherical Gaussians
+    bic_value = log_likelihood - (p / 2) * np.log(n)
+    return bic_value
+
+# added by me
+# def initialize_em(X, K, seed):
+#     np.random.seed(seed)
+#     n, d = X.shape
+
+#     # Initialize means using K-means or random selection
+#     initial_means = X[np.random.choice(n, K, replace=False), :]
+
+#     # Initialize variances as an array with a constant value for each cluster
+#     initial_variances = np.full(K, np.var(X, axis=0).mean())
+
+#     # Initialize mixing coefficients to uniform values
+#     initial_mixing = np.full(K, 1/K)
+
+#     return GaussianMixture(initial_means, initial_variances, initial_mixing)
+
+
+
+def initialize_em(X, K, seed):
+    np.random.seed(seed)
+    n, _ = X.shape
+
+    # Initialize means using random selection
+    initial_means = X[np.random.choice(n, K, replace=False), :]
+
+    # Initialize variances based on mean squared difference from the initial means
+    initial_variances = np.zeros(K)
+    for j in range(K):
+        initial_variances[j] = ((X - initial_means[j])**2).mean()
+
+    # Initialize mixing coefficients to uniform values
+    initial_mixing = np.full(K, 1/K)
+
+    return GaussianMixture(initial_means, initial_variances, initial_mixing)
