@@ -14,7 +14,7 @@ NUM_RUNS = 10
 NUM_EPOCHS = 200
 NUM_EPIS_TRAIN = 25  # number of episodes for training at each epoch
 NUM_EPIS_TEST = 50  # number of episodes for testing
-ALPHA = 0.1  # learning rate for training
+ALPHA = 1  # learning rate for training
 
 ACTIONS = framework.get_actions()
 OBJECTS = framework.get_objects()
@@ -22,93 +22,186 @@ NUM_ACTIONS = len(ACTIONS)
 NUM_OBJECTS = len(OBJECTS)
 
 
-# pragma: coderesponse template
+
 def epsilon_greedy(state_1, state_2, q_func, epsilon):
-    """Returns an action selected by an epsilon-Greedy exploration policy
+    # Make sure that state_1 and state_2 are integers
+    state_1_index = dict_room_desc[state_1] if not isinstance(state_1, int) else state_1
+    state_2_index = dict_quest_desc[state_2] if not isinstance(state_2, int) else state_2
+    
+    if np.random.rand() < epsilon:
+        # Select a random action and object
+        action_index = np.random.randint(NUM_ACTIONS)
+        object_index = np.random.randint(NUM_OBJECTS)
+    else:
+        # Select the action and object with the highest Q-value for the current state
+        # Note: q_func[state_1_index, state_2_index] should give a 2D array over which argmax is computed
+        action_object_pair = np.unravel_index(
+            np.argmax(q_func[state_1_index, state_2_index]),
+            (NUM_ACTIONS, NUM_OBJECTS)
+        )
+        action_index, object_index = action_object_pair
 
-    Args:
-        state_1, state_2 (int, int): two indices describing the current state
-        q_func (np.ndarray): current Q-function
-        epsilon (float): the probability of choosing a random command
-
-    Returns:
-        (int, int): the indices describing the action/object to take
-    """
-    # TODO Your code here
-    action_index, object_index = None, None
     return (action_index, object_index)
 
 
 # pragma: coderesponse end
 
 
-# pragma: coderesponse template
+
 def tabular_q_learning(q_func, current_state_1, current_state_2, action_index,
                        object_index, reward, next_state_1, next_state_2,
                        terminal):
-    """Update q_func for a given transition
+    # Convert states to indices if they are not integers
+    current_state_1_index = dict_room_desc[current_state_1] if not isinstance(current_state_1, int) else current_state_1
+    current_state_2_index = dict_quest_desc[current_state_2] if not isinstance(current_state_2, int) else current_state_2
+    next_state_1_index = dict_room_desc[next_state_1] if not isinstance(next_state_1, int) else next_state_1
+    next_state_2_index = dict_quest_desc[next_state_2] if not isinstance(next_state_2, int) else next_state_2
 
-    Args:
-        q_func (np.ndarray): current Q-function
-        current_state_1, current_state_2 (int, int): two indices describing the current state
-        action_index (int): index of the current action
-        object_index (int): index of the current object
-        reward (float): the immediate reward the agent recieves from playing current command
-        next_state_1, next_state_2 (int, int): two indices describing the next state
-        terminal (bool): True if this episode is over
+    # Rest of your code for tabular_q_learning
+    if not terminal:
+        max_q_next_state = np.max(q_func[next_state_1_index, next_state_2_index, :, :])
+    else:
+        max_q_next_state = 0
 
-    Returns:
-        None
-    """
-    # TODO Your code here
-    q_func[current_state_1, current_state_2, action_index,
-           object_index] = 0  # TODO Your update here
+    # Update the Q-value for the current state-action pair
+    q_func[current_state_1_index, current_state_2_index, action_index, object_index] = \
+        (1 - ALPHA) * q_func[current_state_1_index, current_state_2_index, action_index, object_index] + \
+        ALPHA * (reward + GAMMA * max_q_next_state)
 
-    return None  # This function shouldn't return anything
+    # No return needed since you're updating q_func in place
 
 
 # pragma: coderesponse end
 
 
 # pragma: coderesponse template
+
 def run_episode(for_training):
-    """ Runs one episode
-    If for training, update Q function
-    If for testing, computes and return cumulative discounted reward
+    global q_func  # To use the global Q-function
 
-    Args:
-        for_training (bool): True if for training
-
-    Returns:
-        None
-    """
+    # Set the appropriate epsilon value for training or testing
     epsilon = TRAINING_EP if for_training else TESTING_EP
-
-    epi_reward = None
-    # initialize for each episode
-    # TODO Your code here
-
+    # Initialize cumulative discounted reward
+    epi_reward = 0
+    # Start a new game
     (current_room_desc, current_quest_desc, terminal) = framework.newGame()
+    step = 0
 
     while not terminal:
-        # Choose next action and execute
-        # TODO Your code here
-
-        if for_training:
-            # update Q-function.
-            # TODO Your code here
-            pass
-
+        # Choose action and object indices using the epsilon-greedy policy
+        action_index, object_index = epsilon_greedy(current_room_desc, current_quest_desc, q_func, epsilon)
+        
+        # Take a step in the game
+        (next_room_desc, next_quest_desc, reward, terminal) = framework.step_game(current_room_desc, current_quest_desc, action_index, object_index)
+        
+        # Update cumulative discounted reward if not training
         if not for_training:
-            # update reward
-            # TODO Your code here
-            pass
+            epi_reward += reward * (GAMMA ** step)
 
-        # prepare next step
-        # TODO Your code here
+        # Update the Q-function if in training mode
+        if for_training:
+            tabular_q_learning(q_func, current_room_desc, current_quest_desc, action_index, object_index, reward, next_room_desc, next_quest_desc, terminal)
+
+        # Prepare for the next step
+        current_room_desc, current_quest_desc = next_room_desc, next_quest_desc
+        step += 1
 
     if not for_training:
         return epi_reward
+    
+
+# def run_episode(for_training):
+#     """ Runs one episode
+#     If for training, update Q function
+#     If for testing, computes and return cumulative discounted reward
+
+#     Args:
+#         for_training (bool): True if for training
+
+#     Returns:
+#         None or float: cumulative discounted reward if for testing
+#     """
+#     # Epsilon value for the epsilon-greedy strategy
+#     epsilon = TRAINING_EP if for_training else TESTING_EP
+#     # Initialize cumulative reward for the episode
+#     epi_reward = 0
+#     # Discount factor for future rewards
+#     discount_factor = GAMMA
+#     # Initialize for each episode
+#     (current_room_desc, current_quest_desc, terminal) = framework.newGame()
+#     global q_func
+#     step = 0
+
+#     while not terminal:
+#         # Choose next action and execute
+#         action_index, object_index = epsilon_greedy(epsilon, q_func, current_room_desc, current_quest_desc)
+#         # Take a step in the game
+#         next_state = framework.step_game(current_room_desc, current_quest_desc, action_index, object_index)
+#         # Unpack next state
+#         (next_room_desc, next_quest_desc, reward, terminal) = next_state
+#                 # Use q_func instead of q_values
+
+
+#         if for_training:
+#             # Update Q-function.
+#             best_next_action = np.argmax(q_func[next_room_desc, next_quest_desc])
+#             td_target = reward + discount_factor * q_func[next_room_desc, next_quest_desc, best_next_action]
+#             td_delta = td_target - q_func[current_room_desc, current_quest_desc, action_index, object_index]
+#             q_func[current_room_desc, current_quest_desc, action_index, object_index] += ALPHA * td_delta
+
+
+#         if not for_training:
+#             # Update reward with discounting
+#             epi_reward += reward * (discount_factor ** step)
+
+#         # Prepare for the next step
+#         current_room_desc, current_quest_desc = next_room_desc, next_quest_desc
+
+#         # Increase the step for discounting
+#         step += 1
+
+#     if not for_training:
+#         # Return the cumulative discounted reward
+#         return epi_reward
+    
+# def run_episode(for_training):
+#     """ Runs one episode
+#     If for training, update Q function
+#     If for testing, computes and return cumulative discounted reward
+
+#     Args:
+#         for_training (bool): True if for training
+
+#     Returns:
+#         None
+#     """
+#     epsilon = TRAINING_EP if for_training else TESTING_EP
+
+#     epi_reward = None
+#     # initialize for each episode
+#     # TODO Your code here
+
+#     (current_room_desc, current_quest_desc, terminal) = framework.newGame()
+
+#     while not terminal:
+#         # Choose next action and execute
+#         # TODO Your code here
+
+#         if for_training:
+#             # update Q-function.
+#             # TODO Your code here
+#             pass
+
+#         if not for_training:
+#             # update reward
+#             # TODO Your code here
+#             pass
+
+#         # prepare next step
+#         # TODO Your code here
+
+#     if not for_training:
+#         return epi_reward
 
 
 # pragma: coderesponse end
